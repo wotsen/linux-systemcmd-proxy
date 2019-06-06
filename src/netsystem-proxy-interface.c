@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
@@ -12,12 +11,23 @@
 #define _INVALID_NET_FD -1 // 无效网络套接字句柄
 
 static int _proxy_sock = _INVALID_NET_FD; // 代理套接字句柄
+static char _error_code[MAX_SYSTEM_CMD_LEN] = "ok"; // 当前错误代码
 
-static bool create_proxy_sock(void);
+static enum e_netsystem_result create_proxy_sock(void);
 static void close_proxy_sock(void);
 static bool send_cmd(const char *cmd);
 static enum e_netsystem_result get_proxy_result(void);
 static enum e_netsystem_result retval_to_result(int retval);
+
+void reset_netsystem_cmd_error_code(void)
+{
+    sprintf(_error_code, "ok");
+}
+
+char * get_netsystem_cmd_error_code(void)
+{
+    return _error_code;
+}
 
 static void close_proxy_sock(void)
 {
@@ -29,12 +39,13 @@ static void close_proxy_sock(void)
 
 	return ;
 }
-static bool create_proxy_sock(void)
+
+static enum e_netsystem_result create_proxy_sock(void)
 {
 	// 建立过了就不再建立了
 	if (_INVALID_NET_FD != _proxy_sock)
 	{
-		return true;
+		return e_netsystem_ok;
 	}
 
 	int reuse = 1;
@@ -43,7 +54,7 @@ static bool create_proxy_sock(void)
 
 	if (sockfd < 0)
 	{
-		return false;
+		return e_netsystem_sock_err;
 	}
 
 	address.sun_family = AF_UNIX;
@@ -54,12 +65,12 @@ static bool create_proxy_sock(void)
 	if (connect(sockfd, (struct sockaddr *)&address, sizeof(address)) < 0)
 	{
 		close(sockfd);
-		return false;
+		return e_netsystem_srv_not_exist;
 	}
 
 	_proxy_sock = sockfd;
 
-	return true;
+	return e_netsystem_ok;
 }
 
 static bool send_cmd(const char *cmd)
@@ -78,8 +89,20 @@ static enum e_netsystem_result retval_to_result(int retval)
 {
 	switch (retval)
 	{
+		case -1:
+			return e_netsystem_system_err;
+			break;
 		case 0:
 			return e_netsystem_ok;
+			break;
+		case 1:
+			return e_netsystem_exec_fail;
+			break;
+		case 2:
+			return e_netsystem_child_pross;
+			break;
+		case 0xff:
+			return e_netsystem_error;
 			break;
 		default:
 			break;
@@ -92,7 +115,6 @@ static enum e_netsystem_result get_proxy_result(void)
 {
 	struct netsystem_proxy_protocol net_cmd; // 协议命令
 	char buf[300] = {0};
-	int len = 0;
 
 	memset(&net_cmd, 0, sizeof(net_cmd));
 	memset(buf, 0, sizeof(buf));
@@ -106,7 +128,8 @@ static enum e_netsystem_result get_proxy_result(void)
 
 	memcpy(&net_cmd, buf, sizeof(net_cmd));
 
-	printf("执行结果：%d %s\n", net_cmd.ret, net_cmd.cmd);
+    sprintf(_error_code, "%s", net_cmd.cmd);
+    printf("执行结果：%d %s\n", net_cmd.ret, _error_code);
 
 	return retval_to_result(net_cmd.ret);
 }
@@ -119,14 +142,16 @@ static enum e_netsystem_result get_proxy_result(void)
  */
 enum e_netsystem_result net_system_cmd_proxy(const char *cmd)
 {
+    enum e_netsystem_result ret = e_netsystem_ok;
+
 	if (strlen(cmd) > MAX_SYSTEM_CMD_LEN)
 	{
 		return e_netsystem_cmd_toolong;
 	}
 
-	if (!create_proxy_sock())
+	if (e_netsystem_ok != (ret = create_proxy_sock()))
 	{
-		return e_netsystem_sock_err;
+		return ret;
 	}
 
 	if (!send_cmd(cmd))
@@ -138,16 +163,3 @@ enum e_netsystem_result net_system_cmd_proxy(const char *cmd)
 	return get_proxy_result();
 }
 
-int main(int argc, char **argv)
-{
-	if (2 != argc)
-	{
-		printf("use age:\n");
-		printf("\t%s cmd\n", argv[0]);
-		return 0;
-	}
-
-	net_system_cmd_proxy(argv[1]);
-
-	return 0;
-}

@@ -84,16 +84,19 @@ static void system_cmd_exec_result(struct netsystem_proxy_protocol *net_cmd)
         {
             if (0 == WEXITSTATUS(net_cmd->ret))
             {
+                net_cmd->ret = 0;
                 sprintf(net_cmd->cmd, "run shell script successfully.");
             }
             else
             {
                 sprintf(net_cmd->cmd, "run shell script fail, script exit code = [%d]", WEXITSTATUS(net_cmd->ret));
+                net_cmd->ret = 1;
             }
         }
         else
         {
             sprintf(net_cmd->cmd, "exit status = [%d]", WEXITSTATUS(net_cmd->ret));
+            net_cmd->ret = 2;
         }
     }
 
@@ -104,16 +107,13 @@ static void response_cmd(int sock)
 {
 	struct netsystem_proxy_protocol net_cmd;
 	char buf[300] = {0};
-	int recv_len = 0;
-
-	errno = 0;
 
 	memset(&net_cmd, 0, sizeof(net_cmd));
 	memset(buf, 0, sizeof(buf));
 
 	if (read(sock, buf, sizeof(buf)) < 0)
 	{
-		net_cmd.ret = errno;
+		net_cmd.ret = 0xff;
 		sprintf(net_cmd.cmd, "%s", strerror(errno));
 	}
 	else
