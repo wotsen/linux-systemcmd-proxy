@@ -1,4 +1,4 @@
-#include "../src/netsystem-proxy-interface.h"
+#include "../include/netsystem-proxy-interface.h"
 
 int main(int argc, char **argv)
 {

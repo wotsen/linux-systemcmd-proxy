@@ -1,3 +1,16 @@
+/* 
+ * Copyright (c) 2019 astralrovers.
+ * 
+ * Unpublished Copyright. All rights reserved. This material contains
+ * proprietary information that should be used or copied only within
+ * astralrovers, except with written permission of astralrovers.
+ * 
+ * @file netsystem-proxy-interface.c
+ * @brief:   
+ * @author astralrovers
+ * @version 1.0
+ * @date 2019-06-07
+ */
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
@@ -19,16 +32,33 @@ static bool send_cmd(const char *cmd);
 static enum e_netsystem_result get_proxy_result(void);
 static enum e_netsystem_result retval_to_result(int retval);
 
+/**
+ * @brief 重置错误代码
+ *
+ * @function reset_netsystem_cmd_error_code 
+ */
 void reset_netsystem_cmd_error_code(void)
 {
     sprintf(_error_code, "ok");
 }
 
-char * get_netsystem_cmd_error_code(void)
+/**
+ * @brief 获取当前错误代码
+ *
+ * @function get_netsystem_cmd_error_code 
+ *
+ * @return 错误码字符串
+ */
+const char * get_netsystem_cmd_error_code(void)
 {
     return _error_code;
 }
 
+/**
+ * @brief 关闭套接字
+ *
+ * @function close_proxy_sock 
+ */
 static void close_proxy_sock(void)
 {
 	if (_INVALID_NET_FD != _proxy_sock)
@@ -40,17 +70,26 @@ static void close_proxy_sock(void)
 	return ;
 }
 
+/**
+ * @brief 创建套接字
+ *
+ * @function create_proxy_sock 
+ *
+ * @return 
+ */
 static enum e_netsystem_result create_proxy_sock(void)
 {
+	int reuse = 1;
+	struct sockaddr_un address;
+    int sockfd = _INVALID_NET_FD;
+
 	// 建立过了就不再建立了
 	if (_INVALID_NET_FD != _proxy_sock)
 	{
 		return e_netsystem_ok;
 	}
 
-	int reuse = 1;
-	struct sockaddr_un address;
-	int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
+	sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
 
 	if (sockfd < 0)
 	{
@@ -73,6 +112,14 @@ static enum e_netsystem_result create_proxy_sock(void)
 	return e_netsystem_ok;
 }
 
+/**
+ * @brief 发送命令
+ *
+ * @function        send_cmd 
+ * @param[input]    cmd : 命令
+ *
+ * @return          true-发送成功，false-发送失败
+ */
 static bool send_cmd(const char *cmd)
 {
 	struct netsystem_proxy_protocol net_cmd; // 协议命令
@@ -80,28 +127,38 @@ static bool send_cmd(const char *cmd)
 	memset(&net_cmd, 0, sizeof(net_cmd));
 
 	sprintf(net_cmd.cmd, "%s", cmd);
-	printf("cmd : %s\n", net_cmd.cmd);
+#if defined(NETSYSTEM_CMD_DBG)
+	printf("<%s %d> cmd : %s\n", __func__, __LINE__, net_cmd.cmd);
+#endif
 
 	return write(_proxy_sock, &net_cmd, sizeof(net_cmd)) == sizeof(net_cmd);
 }
 
+/**
+ * @brief 执行结果转换
+ *
+ * @function retval_to_result 
+ * @param[input] retval : 返回码
+ *
+ * @return 
+ */
 static enum e_netsystem_result retval_to_result(int retval)
 {
 	switch (retval)
 	{
-		case -1:
+		case e_system_err:
 			return e_netsystem_system_err;
 			break;
-		case 0:
+		case e_system_exec_ok:
 			return e_netsystem_ok;
 			break;
-		case 1:
+		case e_system_exec_fail:
 			return e_netsystem_exec_fail;
 			break;
-		case 2:
+		case e_system_exec_expection:
 			return e_netsystem_child_pross;
 			break;
-		case 0xff:
+		case e_system_errno:
 			return e_netsystem_error;
 			break;
 		default:
@@ -111,6 +168,13 @@ static enum e_netsystem_result retval_to_result(int retval)
 	return e_netsystem_unknow;
 }
 
+/**
+ * @brief 返回执行结果
+ *
+ * @function get_proxy_result 
+ *
+ * @return 
+ */
 static enum e_netsystem_result get_proxy_result(void)
 {
 	struct netsystem_proxy_protocol net_cmd; // 协议命令
@@ -129,7 +193,9 @@ static enum e_netsystem_result get_proxy_result(void)
 	memcpy(&net_cmd, buf, sizeof(net_cmd));
 
     sprintf(_error_code, "%s", net_cmd.cmd);
+#if defined(NETSYSTEM_CMD_DBG)
     printf("执行结果：%d %s\n", net_cmd.ret, _error_code);
+#endif
 
 	return retval_to_result(net_cmd.ret);
 }

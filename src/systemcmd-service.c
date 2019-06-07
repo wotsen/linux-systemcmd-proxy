@@ -5,6 +5,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <signal.h>
 // net
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -74,7 +75,7 @@ static bool create_proxy_sock(void)
 
 static void system_cmd_exec_result(struct netsystem_proxy_protocol *net_cmd)
 {
-    if (-1 == net_cmd->ret)
+    if (e_system_err == net_cmd->ret)
     {
         sprintf(net_cmd->cmd, "system error!");
     }
@@ -82,21 +83,21 @@ static void system_cmd_exec_result(struct netsystem_proxy_protocol *net_cmd)
     {
         if (WIFEXITED(net_cmd->ret))
         {
-            if (0 == WEXITSTATUS(net_cmd->ret))
+            if (e_system_exec_ok == WEXITSTATUS(net_cmd->ret))
             {
-                net_cmd->ret = 0;
+                net_cmd->ret = e_system_exec_ok;
                 sprintf(net_cmd->cmd, "run shell script successfully.");
             }
             else
             {
                 sprintf(net_cmd->cmd, "run shell script fail, script exit code = [%d]", WEXITSTATUS(net_cmd->ret));
-                net_cmd->ret = 1;
+                net_cmd->ret = e_system_exec_fail;
             }
         }
         else
         {
             sprintf(net_cmd->cmd, "exit status = [%d]", WEXITSTATUS(net_cmd->ret));
-            net_cmd->ret = 2;
+            net_cmd->ret = e_system_exec_expection;
         }
     }
 
@@ -113,7 +114,7 @@ static void response_cmd(int sock)
 
 	if (read(sock, buf, sizeof(buf)) < 0)
 	{
-		net_cmd.ret = 0xff;
+		net_cmd.ret = e_system_errno;
 		sprintf(net_cmd.cmd, "%s", strerror(errno));
 	}
 	else
@@ -160,6 +161,8 @@ int main(void)
 		printf("create_proxy_sock err\n");
 		return 0;
 	}
+
+    signal(SIGPIPE, SIG_IGN);
 
 	wait_cmd_connect();
 

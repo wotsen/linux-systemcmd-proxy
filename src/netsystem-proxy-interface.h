@@ -19,7 +19,7 @@ enum e_netsystem_result
 
 enum e_netsystem_result net_system_cmd_proxy(const char *cmd);
 void reset_netsystem_cmd_error_code(void);
-char * get_netsystem_cmd_error_code(void);
+const char * get_netsystem_cmd_error_code(void);
 
 #endif // endof : #ifndef __NETSYSTEM_PROXY_INTERFACE_H__
 
