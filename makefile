@@ -1,18 +1,18 @@
-CC=gcc
+CC=g++
 
 NET_SYSTEM = net_system_cmd_proxyd
 OBJ_STATIC_LIB = libnetsys_cmd_proxy_cli.a
 
-SRV_SRC = ./src/systemcmd-service.c
-CLI_SRC = ./src/netsystem-proxy-interface.c
+SRV_SRC = ./src/systemcmd-service.cpp
+CLI_SRC = ./src/netsystemcmd-proxy-interface.cpp
 
-SRV_OBJ = $(patsubst %c, %o, $(SRV_SRC))
-CLI_OBJ = $(patsubst %c, %o, $(CLI_SRC))
+SRV_OBJ = $(patsubst %cpp, %o, $(SRV_SRC))
+CLI_OBJ = $(patsubst %cpp, %o, $(CLI_SRC))
 
 LIBS = -lnetsys_cmd_proxy_cli
 INC = -I./src/
 
-INCS = ./src/netsystem-proxy-interface.h
+INCS = ./src/netsystemcmd-proxy-interface.h
 
 CFLAGS = -W -O3
 
@@ -34,11 +34,11 @@ $(NET_SYSTEM):$(SRV_OBJ)
 $(OBJ_STATIC_LIB):$(CLI_OBJ)
 	ar -r $@ $<
 
-%.o:%.c
+%.o:%.cpp
 	$(CC) $< -c -o $@ $(INC) $(CFLAGS)
 
 cli_test:
-	$(CC) ./test/main.c -o $@ -I$(LOC_INC) $(LIBS) -L$(LOC_LIB)
+	$(CC) ./test/main.cpp -o $@ -I$(LOC_INC) $(LIBS) -L$(LOC_LIB)
 
 clean:
 	rm -rf $(SRV_OBJ) $(CLI_OBJ) $(OBJ_STATIC_LIB) $(NET_SYSTEM) cli_test $(LOC_INC) $(LOC_BIN) $(LOC_LIB)

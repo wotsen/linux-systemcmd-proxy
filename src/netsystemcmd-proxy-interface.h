@@ -1,6 +1,14 @@
-#ifndef __NETSYSTEM_PROXY_INTERFACE_H__
-#define __NETSYSTEM_PROXY_INTERFACE_H__
-#include <stdio.h>
+/**
+ * @file netsystemcmd-proxy-interface.h
+ * @author yuwangliang (astralrovers@outlook.com)
+ * @brief 
+ * @version 0.1
+ * @date 2020-01-25
+ * 
+ * @copyright Copyright (c) 2020
+ * 
+ */
+#pragma once
 
 enum e_netsystem_result
 {
@@ -21,5 +29,4 @@ enum e_netsystem_result net_system_cmd_proxy(const char *cmd);
 void reset_netsystem_cmd_error_code(void);
 const char * get_netsystem_cmd_error_code(void);
 
-#endif // endof : #ifndef __NETSYSTEM_PROXY_INTERFACE_H__
 

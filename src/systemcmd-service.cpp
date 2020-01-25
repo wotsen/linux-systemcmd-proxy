@@ -1,4 +1,13 @@
-// TODO : 网络linux系统命令执行代理，减小开销
+/**
+ * @file systemcmd-service.cpp
+ * @author yuwangliang (astralrovers@outlook.com)
+ * @brief 
+ * @version 0.1
+ * @date 2020-01-25
+ * 
+ * @copyright Copyright (c) 2020
+ * 
+ */
 #include <stdio.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -10,7 +19,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "netsystem-proxy-protocol.h"
+#include "netsystemcmd-proxy-protocol.h"
 
 #define _INVALID_NET_FD -1 // 无效网络套接字句柄
 
@@ -18,8 +27,77 @@ static int _proxy_sock = _INVALID_NET_FD; // 代理套接字句柄
 
 static bool create_proxy_sock(void);
 static void wait_cmd_connect(void);
-static void response_cmd(int sock);
+static void response_cmd(const int sock);
 
+/**
+ * @brief 地址重用
+ * 
+ * @param sockfd 
+ * @return true 
+ * @return false 
+ */
+static bool addr_reuse(const int sockfd)
+{
+	int reuse = 1;
+
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof reuse) < 0)
+	{
+		perror("Setsock failed");
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * @brief 地址绑定
+ * 
+ * @param sockfd 
+ * @return true 
+ * @return false 
+ */
+static bool bind_addr(const int sockfd)
+{
+	struct sockaddr_un address;
+
+	memset(&address, 0, sizeof(address));
+
+	address.sun_family = AF_UNIX;
+	strcpy(address.sun_path, NETSYSTEM_PROXY_AF_UNIX_NODE);
+
+	if (bind(sockfd, (struct sockaddr *)&address, (socklen_t)sizeof(address)) < 0)
+	{
+		perror("Bind failed");
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * @brief 监听请求
+ * 
+ * @param sockfd 
+ * @return true 
+ * @return false 
+ */
+static bool listen_requset(const int sockfd)
+{
+	if (listen(sockfd, 5) < 0)
+	{
+		perror("Listen failed");
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * @brief Create a proxy sock object
+ * 
+ * @return true 
+ * @return false 
+ */
 static bool create_proxy_sock(void)
 {
 	// 建立过了就不再建立了
@@ -27,42 +105,23 @@ static bool create_proxy_sock(void)
 	{
 		return true;
 	}
-
-	int reuse = 1;
-	struct sockaddr_un address;
+	
 	int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-
-	memset(&address, 0, sizeof(address));
-
 	if (sockfd < 0)
 	{
 		return false;
 	}
 
-	address.sun_family = AF_UNIX;
-	strcpy(address.sun_path, NETSYSTEM_PROXY_AF_UNIX_NODE);
-
-	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof reuse) < 0)
+	if (!addr_reuse(sockfd))
 	{
-		perror("Setsock failed");
 		close(sockfd);
 		return false;
-	}
+	}	
 
 	unlink(NETSYSTEM_PROXY_AF_UNIX_NODE);
 
-	if (bind(sockfd, (struct sockaddr *)&address, (socklen_t)sizeof(address)) < 0)
+	if (!bind_addr(sockfd) || !listen_requset(sockfd))
 	{
-		perror("Bind failed");
-		close(sockfd);
-		unlink(NETSYSTEM_PROXY_AF_UNIX_NODE);
-		return false;
-	}
-
-	/* 监听 */
-	if (listen(sockfd, 5) < 0)
-	{
-		perror("Listen failed");
 		close(sockfd);
 		unlink(NETSYSTEM_PROXY_AF_UNIX_NODE);
 		return false;
@@ -73,6 +132,11 @@ static bool create_proxy_sock(void)
 	return true;
 }
 
+/**
+ * @brief system 执行结果
+ * 
+ * @param net_cmd 
+ */
 static void system_cmd_exec_result(struct netsystem_proxy_protocol *net_cmd)
 {
     if (e_system_err == net_cmd->ret)
@@ -104,7 +168,12 @@ static void system_cmd_exec_result(struct netsystem_proxy_protocol *net_cmd)
 	return ;
 }
 
-static void response_cmd(int sock)
+/**
+ * @brief 响应命令
+ * 
+ * @param sock 
+ */
+static void response_cmd(const int sock)
 {
 	struct netsystem_proxy_protocol net_cmd;
 	char buf[300] = {0};
@@ -121,16 +190,23 @@ static void response_cmd(int sock)
 	{
 		memcpy(&net_cmd, buf, sizeof(net_cmd));
 
+		// 执行命令
 		net_cmd.ret = system(net_cmd.cmd);
 		
+		// 保存执行结果
 		system_cmd_exec_result(&net_cmd);
 	}
 
-	write(sock, &net_cmd, sizeof(net_cmd));
+	// 相应命令请求
+	int ret = write(sock, &net_cmd, sizeof(net_cmd));
 
 	return ;
 }
 
+/**
+ * @brief 等待连接
+ * 
+ */
 static void wait_cmd_connect(void)
 {
 	int client_sockfd;

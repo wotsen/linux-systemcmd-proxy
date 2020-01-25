@@ -1,16 +1,15 @@
-/* 
- * Copyright (c) 2019 astralrovers.
+/**
+ * @file netsystemcmd-proxy-interface.cpp
+ * @author yuwangliang (astralrovers@outlook.com)
+ * @brief 
+ * @version 0.1
+ * @date 2020-01-25
  * 
- * Unpublished Copyright. All rights reserved. This material contains
- * proprietary information that should be used or copied only within
- * astralrovers, except with written permission of astralrovers.
+ * @copyright Copyright (c) 2020
  * 
- * @file netsystem-proxy-interface.c
- * @brief:   
- * @author astralrovers
- * @version 1.0
- * @date 2019-06-07
  */
+
+#include <stdio.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
@@ -18,8 +17,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "netsystem-proxy-protocol.h"
-#include "netsystem-proxy-interface.h"
+#include "netsystemcmd-proxy-protocol.h"
+#include "netsystemcmd-proxy-interface.h"
 
 #define _INVALID_NET_FD -1 // 无效网络套接字句柄
 
@@ -81,7 +80,6 @@ static enum e_netsystem_result create_proxy_sock(void)
 {
 	int reuse = 1;
 	struct sockaddr_un address;
-    int sockfd = _INVALID_NET_FD;
 
 	// 建立过了就不再建立了
 	if (_INVALID_NET_FD != _proxy_sock)
@@ -89,17 +87,16 @@ static enum e_netsystem_result create_proxy_sock(void)
 		return e_netsystem_ok;
 	}
 
-	sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-
+	int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sockfd < 0)
 	{
 		return e_netsystem_sock_err;
 	}
 
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof reuse);
+
 	address.sun_family = AF_UNIX;
 	strcpy(address.sun_path, NETSYSTEM_PROXY_AF_UNIX_NODE);
-
-	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof reuse);
 
 	if (connect(sockfd, (struct sockaddr *)&address, sizeof(address)) < 0)
 	{
@@ -127,7 +124,7 @@ static bool send_cmd(const char *cmd)
 	memset(&net_cmd, 0, sizeof(net_cmd));
 
 	sprintf(net_cmd.cmd, "%s", cmd);
-#if defined(NETSYSTEM_CMD_DBG)
+#if defined(DEBUG)
 	printf("<%s %d> cmd : %s\n", __func__, __LINE__, net_cmd.cmd);
 #endif
 
@@ -192,8 +189,10 @@ static enum e_netsystem_result get_proxy_result(void)
 
 	memcpy(&net_cmd, buf, sizeof(net_cmd));
 
-    sprintf(_error_code, "%s", net_cmd.cmd);
-#if defined(NETSYSTEM_CMD_DBG)
+	memset(_error_code, 0, sizeof(_error_code));
+	strncpy(_error_code, net_cmd.cmd, sizeof(_error_code));
+
+#if defined(DEBUG)
     printf("执行结果：%d %s\n", net_cmd.ret, _error_code);
 #endif
 
