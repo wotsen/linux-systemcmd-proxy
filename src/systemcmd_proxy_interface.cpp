@@ -21,6 +21,9 @@
 #include "systemcmd_private_protocol.h"
 #include "systemcmd_proxy_interface.h"
 
+namespace wotsen
+{
+
 #ifdef DEBUG
 
 #define __DEBUG(fmt, args...) printf("[%s %s %d]" fmt, __FILE__, __func__, __LINE__, ##args)
@@ -192,3 +195,16 @@ bool systemcmd_proxy(const char *cmd)
 	return get_proxy_result();
 }
 
+/**
+ * @brief Get the systemcmd proxy version object
+ * 
+ * @return const char* 
+ */
+const char *get_systemcmd_proxy_version(void)
+{
+	const static char *version= SYSTEMCMD_PROXY_VERSION;
+
+	return version;
+}
+
+} // namespace wotsen

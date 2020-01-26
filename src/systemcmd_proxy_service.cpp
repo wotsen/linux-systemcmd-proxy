@@ -21,6 +21,9 @@
 
 #include "systemcmd_private_protocol.h"
 
+namespace wotsen
+{
+
 #define _INVALID_NET_FD -1 // 无效网络套接字句柄
 
 static int _proxy_sock = _INVALID_NET_FD; // 代理套接字句柄
@@ -229,6 +232,10 @@ static void wait_cmd_connect(void)
 
 	return ;
 }
+
+} // namespace wotsen
+
+using namespace wotsen;
 
 int main(void)
 {

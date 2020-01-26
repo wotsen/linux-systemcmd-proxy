@@ -10,6 +10,9 @@
  */
 #pragma once
 
+namespace wotsen
+{
+
 /**
  * @brief 系统命令代理
  * 
@@ -18,3 +21,12 @@
  * @return false 失败
  */
 bool systemcmd_proxy(const char *cmd);
+
+/**
+ * @brief Get the systemcmd proxy version object
+ * 
+ * @return const char* 
+ */
+const char *get_systemcmd_proxy_version(void);
+
+} // namespace wotsen

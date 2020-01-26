@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "../include/systemcmd_proxy_interface.h"
 
+using namespace wotsen;
+
 int main(int argc, char **argv)
 {
 	if (2 != argc)
@@ -10,7 +12,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	printf("ret = %d\n", systemcmd_proxy(argv[1]));
+	printf("%s ret = %d\n", get_systemcmd_proxy_version(), systemcmd_proxy(argv[1]));
 
 	return 0;
 }

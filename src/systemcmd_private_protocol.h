@@ -10,11 +10,15 @@
  */
 
 #pragma once
+namespace wotsen
+{
 
 #define NETSYSTEM_SERVICE_PORT 6010	// 服务端口
 #define NETSYSTEM_PROXY_AF_UNIX_NODE "/tmp/netsystem" // AF_UNIX 使用的文件节点
 
 #define MAX_SYSTEM_CMD_LEN 254 // 最长系统命令
+
+#define SYSTEMCMD_PROXY_VERSION "1.0.0"
 
 /**
  * @brief 内部执行结果返回码
@@ -33,3 +37,5 @@ struct netsystem_proxy_protocol
 	char cmd[MAX_SYSTEM_CMD_LEN+1]; // 系统命令 留一字节放'\0'
 	int ret; // 执行结果
 };
+
+} // namespace wotsen
