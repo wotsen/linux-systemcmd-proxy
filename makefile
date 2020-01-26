@@ -1,32 +1,34 @@
 CC=g++
 
-NET_SYSTEM = net_system_cmd_proxyd
-OBJ_STATIC_LIB = libnetsys_cmd_proxy_cli.a
+DEBUG = false
 
-SRV_SRC = ./src/systemcmd-service.cpp
-CLI_SRC = ./src/netsystemcmd-proxy-interface.cpp
+MAKE_INSTALL_PREFIX = .
+
+NET_SYSTEM = systemcmd_proxyd
+OBJ_STATIC_LIB = libsystemcmd_proxy_cli.a
+
+SRV_SRC = ./src/systemcmd_proxy_service.cpp
+CLI_SRC = ./src/systemcmd_proxy_interface.cpp
 
 SRV_OBJ = $(patsubst %cpp, %o, $(SRV_SRC))
 CLI_OBJ = $(patsubst %cpp, %o, $(CLI_SRC))
 
-LIBS = -lnetsys_cmd_proxy_cli
+LIBS = -lsystemcmd_proxy_cli
 INC = -I./src/
 
-INCS = ./src/netsystemcmd-proxy-interface.h
+INCS = ./src/systemcmd_proxy_interface.h
 
 CFLAGS = -W -O3
 
-LOC_INC = ./include/
-LOC_BIN = ./bin/
-LOC_LIB = ./lib/
+ifeq ($(DEBUG), true)
+CFLAGS += -DDEBUG
+endif
+
+LOC_INC = $(MAKE_INSTALL_PREFIX)/include/
+LOC_BIN = $(MAKE_INSTALL_PREFIX)/bin/
+LOC_LIB = $(MAKE_INSTALL_PREFIX)/lib/
 
 all:$(NET_SYSTEM) $(OBJ_STATIC_LIB)
-	-mkdir -p $(LOC_INC)
-	-cp $(INCS) $(LOC_INC) -f
-	-mkdir -p $(LOC_BIN)
-	-cp $(NET_SYSTEM) $(LOC_BIN) -f
-	-mkdir -p $(LOC_LIB)
-	-cp $(OBJ_STATIC_LIB) $(LOC_LIB) -f
 
 $(NET_SYSTEM):$(SRV_OBJ)
 	$(CC) $^ -o $@ $(INC) $(CFLAGS)
@@ -37,6 +39,14 @@ $(OBJ_STATIC_LIB):$(CLI_OBJ)
 %.o:%.cpp
 	$(CC) $< -c -o $@ $(INC) $(CFLAGS)
 
+.PHONY: install
+install:
+	-mkdir -p $(LOC_INC)
+	-cp $(INCS) $(LOC_INC) -f
+	-mkdir -p $(LOC_BIN)
+	-cp $(NET_SYSTEM) $(LOC_BIN) -f
+	-mkdir -p $(LOC_LIB)
+	-cp $(OBJ_STATIC_LIB) $(LOC_LIB) -f
 cli_test:
 	$(CC) ./test/main.cpp -o $@ -I$(LOC_INC) $(LIBS) -L$(LOC_LIB)
 

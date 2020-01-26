@@ -1,5 +1,5 @@
 /**
- * @file systemcmd-service.cpp
+ * @file systemcmd_proxy_service.cpp
  * @author yuwangliang (astralrovers@outlook.com)
  * @brief 
  * @version 0.1
@@ -19,7 +19,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "netsystemcmd-proxy-protocol.h"
+#include "systemcmd_private_protocol.h"
 
 #define _INVALID_NET_FD -1 // 无效网络套接字句柄
 
@@ -83,7 +83,7 @@ static bool bind_addr(const int sockfd)
  */
 static bool listen_requset(const int sockfd)
 {
-	if (listen(sockfd, 5) < 0)
+	if (listen(sockfd, 20) < 0)
 	{
 		perror("Listen failed");
 		return false;

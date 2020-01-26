@@ -1,9 +1,9 @@
 /**
- * @file netsystemcmd-proxy-protocol.h
+ * @file systemcmd_private_protocol.h
  * @author yuwangliang (astralrovers@outlook.com)
  * @brief 
  * @version 0.1
- * @date 2020-01-25
+ * @date 2020-01-26
  * 
  * @copyright Copyright (c) 2020
  * 
@@ -19,7 +19,7 @@
 /**
  * @brief 内部执行结果返回码
  */
-enum e_netsystem_cmd_ret
+enum e_systemcmd_proxy_cmd_ret
 {
     e_system_err = -1,           // 系统调用错误
     e_system_exec_ok = 0,        // 执行成功

@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../include/netsystemcmd-proxy-interface.h"
+#include "../include/systemcmd_proxy_interface.h"
 
 int main(int argc, char **argv)
 {
@@ -10,8 +10,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	printf("ret = %d\n", net_system_cmd_proxy(argv[1]));
-    printf("ret_code = %s\n", get_netsystem_cmd_error_code());
+	printf("ret = %d\n", systemcmd_proxy(argv[1]));
 
 	return 0;
 }
