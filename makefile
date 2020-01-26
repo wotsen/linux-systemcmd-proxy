@@ -18,7 +18,7 @@ INC = -I./src/
 
 INCS = ./src/systemcmd_proxy_interface.h
 
-CFLAGS = -W -O3
+CFLAGS = -lpthread -W -O3
 
 ifeq ($(DEBUG), true)
 CFLAGS += -DDEBUG

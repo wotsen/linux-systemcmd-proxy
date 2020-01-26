@@ -14,6 +14,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+
+#include <pthread.h>
 // net
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -37,6 +39,8 @@ namespace wotsen
 #define _INVALID_NET_FD -1 // 无效网络套接字句柄
 
 static int _proxy_sock = _INVALID_NET_FD; // 代理套接字句柄
+
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static bool create_proxy_sock(void);
 static void close_proxy_sock(void);
@@ -177,9 +181,12 @@ bool systemcmd_proxy(const char *cmd)
 		return false;
 	}
 
+	pthread_mutex_lock(&mutex);
+
 	// 创建连接
 	if (!create_proxy_sock())
 	{
+		pthread_mutex_unlock(&mutex);
 		return false;
 	}
 
@@ -188,8 +195,11 @@ bool systemcmd_proxy(const char *cmd)
 	{
 		close_proxy_sock();
 		__DEBUG("send_cmd faild\n");
+		pthread_mutex_unlock(&mutex);
 		return false;
 	}
+
+	pthread_mutex_unlock(&mutex);
 
 	// 获取执行结果
 	return get_proxy_result();
