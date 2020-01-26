@@ -53,3 +53,4 @@ dkms.conf
 .tags*
 tags*
 types_c.taghl
+systemcmd_proxyd
